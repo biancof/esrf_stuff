@@ -1,0 +1,464 @@
+#################################################################
+##########                                             ##########
+##########         FRANCESCO BIANCO'S MACROS           ##########
+##########                                             ##########
+##########          October - November 2017            ##########
+##########					       ##########
+##########		  ESRF © 2017                  ##########
+##########					       ##########
+#################################################################
+
+#################################################################
+##########                                             ##########
+##########          FRANCESCO'S FIRST MACRO            ##########
+##########                                             ##########
+########## For a given angle and a given device (num), ##########
+########## it calculates the right position of all     ##########
+########## analysers                                   ##########
+##########                                             ##########
+#################################################################
+
+def pos_analyser '{
+ local x num2 anpos[]
+ 
+ angle = $1
+ num2 = "$2"
+ 
+ radius_val = 250
+ 
+ if (num2 == "anm2") {
+    anpos = spectrometer_analyser_calc(angle, radius_val, -240)
+} else if (num2 == "anm1") {
+    anpos = spectrometer_analyser_calc(angle, radius_val, -120)
+} else if (num2 == "an0")  {
+    anpos = spectrometer_analyser_calc(angle, radius_val, 0)
+} else if (num2 == "anp1") {
+    anpos = spectrometer_analyser_calc(angle, radius_val, 120)
+} else if (num2 == "anp2") {
+    anpos = spectrometer_analyser_calc(angle, radius_val, 240)
+} else if (num2 == "det") {
+    anpos = spectrometer_detector_calc(angle, radius_val)
+} else {
+    p "\nThere are only 5 analysers: anm2, anm1, anm0, anp1, anp2"
+    exit
+}
+
+printf("\nThe right position for %s - with an angle of %g - is the following:\n\n", num2, x)
+printf("y = %g\n", anpos["y"])
+printf("z = %g\n", anpos["z"])
+if (num2 != "det") {
+  printf("chi = %g\n", anpos["chi"])
+}
+printf("theta = %g\n", anpos["theta"])
+
+}'
+
+#################################################################
+##########                                             ##########
+########## FRANCESCO'S FUNCTION TO APPROXIMATE NUMBERS ##########
+##########                                             ##########
+########## It considers two given numbers (val1, val2) ##########
+########## as the same one if their difference is less ##########
+########## than a third given number (delta).          ##########
+##########                                             ##########
+#################################################################
+
+def equal(val1, val2, delta) '{
+    
+    v2pd  = val2 + delta
+    v2md  = val2 - delta
+    
+    if (val1 > (val2 + delta) || val1 < (val2 - delta)) {
+        return(0)}
+        else {
+        return(1)
+    }
+}'
+
+#################################################################
+##########                                             ##########
+##########           FRANCESCO'S SECOND MACRO          ##########
+##########                                             ##########
+########## For a given angle, it calculates the right  ##########
+########## position of all elements (anxx, det)        ##########
+##########                                             ##########
+#################################################################
+
+def pos_analyser_detector '{
+ 
+ local angle anm2pos anm1pos an0pos anp1pos anp2pos detpos
+ 
+ angle      = $1
+ 
+ radius_val = 250
+ 
+ anm2pos    = spectrometer_analyser_calc(angle, radius_val, -240)
+ anm1pos    = spectrometer_analyser_calc(angle, radius_val, -120)
+ an0pos     = spectrometer_analyser_calc(angle, radius_val, 0)
+ anp1pos    = spectrometer_analyser_calc(angle, radius_val, 120)
+ anp2pos    = spectrometer_analyser_calc(angle, radius_val, 240)
+ detpos     = spectrometer_detector_calc(angle, radius_val)
+
+printf("\nThe right positions for the the five analysers (anm2, anm1, an0, anp1, anp2) and the detector (det), with an angle of %g, are the following:\n\n", angle)
+
+printf("anm2:       y = %g          z = %g          chi = %g        theta = %g\n", anm2pos["y"], anm2pos["z"], anm2pos["chi"], anm2pos["theta"]) 
+printf("anm1:       y = %g          z = %g          chi = %g        theta = %g\n", anm1pos["y"], anm1pos["z"], anm1pos["chi"], anm1pos["theta"])
+printf("an0:        y = %g          z = %g          chi = %g        theta = %g\n", an0pos["y"], an0pos["z"], an0pos["chi"], an0pos["theta"])
+printf("anp1:       y = %g          z = %g          chi = %g        theta = %g\n", anp1pos["y"], anp1pos["z"], anp1pos["chi"], anp1pos["theta"])
+printf("anp2:       y = %g          z = %g          chi = %g        theta = %g\n", anp2pos["y"], anp2pos["z"], anp2pos["chi"], anp2pos["theta"])
+printf("\ndet:      y = %g          z = %g                          theta = %g\n", detpos["y"], detpos["z"], detpos["theta"])
+
+}'
+ 
+#################################################################
+##########                                             ##########
+##########           FRANCESCO'S THIRD  MACRO          ##########
+##########                                             ##########
+########## For a given angle, it compares the right    ##########
+########## position of all devices with their real     ##########
+########## one.                                        ##########
+########## It consider only the first 4 decimals       ##########
+########## digits. Furthers decimals are approximated. ##########
+##########                                             ##########
+#################################################################
+
+ def rightpos '{
+ 
+    angle           = $1
+    
+    radius_val      = 250
+    delta           = 0.0005
+    
+    anm2pos         = spectrometer_analyser_calc(angle, radius_val, -240)
+    anm1pos         = spectrometer_analyser_calc(angle, radius_val, -120)
+    an0pos          = spectrometer_analyser_calc(angle, radius_val, 0)
+    anp1pos         = spectrometer_analyser_calc(angle, radius_val, 120)
+    anp2pos         = spectrometer_analyser_calc(angle, radius_val, 240)
+    detpos          = spectrometer_detector_calc(angle, radius_val)
+    
+    printf("\nFor an angle of %s,\n\n", angle)
+    
+    if(equal(anm2pos["y"], A[anm2y], delta) == 1 && equal(anm2pos["z"], A[anm2z], delta) == 1 && equal(anm2pos["chi"], A[anm2c], delta) == 1 && equal(anm2pos["theta"], A[anm2t], delta) == 1)
+     {p "anm2 is ok"}
+     else {p "anm2 is not in the right position"}
+    
+    if(equal(anm1pos["y"], A[anm1y], delta) == 1 && equal(anm1pos["z"], A[anm1z], delta) == 1 && equal(anm1pos["chi"], A[anm1c], delta) == 1 && equal(anm1pos["theta"], A[anm1t], delta) == 1)
+     {p "anm1 is ok"}
+     else {p "anm1 is not in the right position"}
+     
+    if(equal(an0pos["y"], A[an0y], delta) == 1 && equal(an0pos["z"], A[an0z], delta) == 1 && equal(an0pos["chi"], A[an0c], delta) == 1 && equal(an0pos["theta"], A[an0t], delta) == 1)
+     {p "an0 is ok"}
+     else {p "an0 is not in the right position"}
+     
+    if(equal(anp1pos["y"], A[anp1y], delta) == 1 && equal(anp1pos["z"], realint[anp1z], delta) == 1 && equal(anp1pos["chi"], realint[anp1c], delta) == 1 && equal(anp1pos["theta"], A[anp1t], delta) == 1)
+     {p "anp1 is ok"}
+     else {p "anp1 is not in the right position"}
+     
+    if(equal(anp2pos["y"], A[anp2y], delta) == 1 && equal(anp2pos["z"], realint[anp2z], delta) == 1 && equal(anp2pos["chi"], A[anp2c], delta) == 1 && equal(anp2pos["theta"], A[anp2t], delta) == 1)
+     {p "anp2 is ok"}
+     else {p "anp2 is not in the right position"}
+    
+    if(equal(detpos["y"], A[dety], delta) == 1 && equal(detpos["z"], A[detz], delta) == 1 && equal(detpos["theta"], A[dett], delta) == 1)
+     {p "det is ok"}
+     else {p "det is not in the right position"}
+     
+ }'
+     
+#################################################################
+##########                                             ##########
+##########           FRANCESCO'S FOURTH  MACRO         ##########
+##########                                             ##########
+########## For a given angle, it moves all the motors  ##########
+########## of a given device to the right position.    ##########
+########## By choosing "all", one can move all devices ##########
+########## at the same time.                           ##########
+##########                                             ##########
+#################################################################
+
+def move_motors '{
+    
+    dev             = "$1"
+    angle           = $2
+    
+    radius_val      = 250
+
+    anm2pos         = spectrometer_analyser_calc(angle, radius_val, -240)
+    anm1pos         = spectrometer_analyser_calc(angle, radius_val, -120)
+    an0pos          = spectrometer_analyser_calc(angle, radius_val, 0)
+    anp1pos         = spectrometer_analyser_calc(angle, radius_val, 120)
+    anp2pos         = spectrometer_analyser_calc(angle, radius_val, 240)
+    detpos          = spectrometer_detector_calc(angle, radius_val)
+    
+    anm2ymv         = anm2pos["y"]
+    anm2zmv         = anm2pos["z"]
+    anm2cmv         = anm2pos["chi"]
+    anm2tmv         = anm2pos["theta"]
+    anm1ymv         = anm1pos["y"]
+    anm1zmv         = anm1pos["z"]
+    anm1cmv         = anm1pos["chi"]
+    anm1tmv         = anm1pos["theta"]
+    an0ymv          = an0pos["y"]
+    an0zmv          = an0pos["z"]
+    an0cmv          = an0pos["chi"]
+    an0tmv          = an0pos["theta"]
+    anp1ymv         = anp1pos["y"]
+    anp1zmv         = anp1pos["z"]
+    anp1cmv         = anp1pos["chi"]
+    anp1tmv         = anp1pos["theta"]
+    anp2ymv         = anp2pos["y"]
+    anp2zmv         = anp2pos["z"]
+    anp2cmv         = anp2pos["chi"] 
+    anp2tmv         = anp2pos["theta"]
+    detymv          = detpos["y"]
+    detzmv          = detpos["z"]
+    detcmv          = detpos["chi"]
+    dettmv          = detpos["theta"]
+    
+    printf("\n\nThe position of %s has been changed, due to an angle of %i, as it follows:\n\n", dev, angle)
+    
+    if(dev == "anm2") {mv anm2y an2ymv anm2z anm2zmv anm2c anm2cmv anm2t anm2tmv}
+    if(dev == "anm2") {wanm2}
+    if(dev == "anm1") {mv anm1y anm1ymv anm1z anm1zmv anm1c anm1cmv anm1t anm1tmv}
+    if(dev == "anm1") {wanp1}
+    if(dev == "an0")  {mv an0y an0ymv an0z an0zmv an0c an0cmv an0t an0tmv}
+    if(dev == "an0")  {wan0}
+    if(dev == "anp1") {mv anp1y anp1ymv anp1z anp1zmv anp1c anp1cmv anp1t anp1tmv}
+    if(dev == "anp1") {wanp1}
+    if(dev == "anp2") {mv anp2y anp2ymv anp2z anp2zmv anp2c anp2cmv anp2t anp2tmv}
+    if(dev == "anp2") {wanp2}
+    if(dev == "det")  {mv dety detymv detz detzmv detc detcmv dett dettmv}
+    if(dev == "det")  {wdet}
+    if(dev == "all")  {mv anm2y an2ymv anm2z anm2zmv anm2c anm2cmv anm2t anm2tmv anm1y anm1ymv anm1z anm1zmv anm1c anm1cmv anm1t anm1tmv an0y an0ymv an0z an0zmv an0c an0cmv an0t an0tmv anp1y anp1ymv anp1z anp1zmv anp1c anp1cmv anp1t anp1tmv anp2y anp2ymv anp2z anp2zmv anp2c anp2cmv anp2t anp2tmv dety detymv detz detzmv dett dettmv}
+    if(dev == "all")  {wa}
+    
+    }'
+
+#################################################################
+##########                                             ##########
+##########           FRANCESCO'S FIFTH  MACRO          ##########
+##########                                             ##########
+########## It moves all motors to the given position.  ##########
+########## The user has to type 23 numbers.            ##########
+##########                                             ##########
+#################################################################
+
+def reset_all '{
+
+    anm2yrv         = $1
+    anm2zrv         = $2
+    anm2crv         = $3
+    anm2trv         = $4
+    anm1yrv         = $5
+    anm1zrv         = $6
+    anm1crv         = $7
+    anm1trv         = $8
+    an0yrv          = $9
+    an0zrv          = $10
+    an0crv          = $11
+    an0trv          = $12
+    anp1yrv         = $13
+    anp1zrv         = $14
+    anp1crv         = $15
+    anp1trv         = $16
+    anp2yrv         = $16
+    anp2zrv         = $17
+    anp2crv         = $18 
+    anp2trv         = $19
+    detyrv          = $20
+    detzrv          = $21
+    detcrv          = $22
+    dettrv          = $23
+    
+    mv anm2y an2yrv anm2z anm2zrv anm2c anm2crv anm2t anm2trv anm1y anm1yrv anm1z anm1zrv anm1c anm1crv anm1t anm1trv an0y an0yrv an0z an0zrv an0c an0crv an0t an0trv anp1y anp1yrv anp1z anp1zrv anp1c anp1crv anp1t anp1trv anp2y anp2yrv anp2z anp2zrv anp2c anp2crv anp2t anp2trv dety detyrv detz detzmv dett dettrv
+    
+    p "The position of all motors has been reset"
+    }'
+
+#################################################################
+##########                                             ##########
+##########           FRANCESCO'S OTHERS MACROS         ##########
+##########                                             ##########
+########## The following macros help the sixth one to  ##########
+########## work.                                       ##########
+##########                                             ##########
+#################################################################
+
+def spectro_status '{
+    
+    angle           = $1
+    
+    radius_val      = 250
+    delta           = 0.0005
+    
+    printf("\nFor an angle of %i\n", angle)
+    
+    if(devstatus(angle, -240) == "wrong") {
+        wrongpos(angle, -240)
+    } else {
+        p "\nanm2 is in the right position"
+    }
+    
+    if (devstatus(angle, -120) == "wrong") {
+      wrongpos(angle, -120)}
+    else {p "\nanm1 is in the right position\n"}
+    if(devstatus(angle, 0) == "wrong")
+     {wrongpos(angle, 0)}
+     else {p "\nan0 is in the right position\n"}
+    if(devstatus(angle, 120) == "wrong")
+     {wrongpos(angle, 120)}
+     else {p "\nanp1 is in the right position\n"}
+    if(devstatus(angle, 240) == "wrong")
+     {wrongpos(angle, 240)}
+     else {p "\nanp2 is in the right position\n"}
+    if(detstatus(angle) == "wrong")
+     {detwrongpos(angle)}
+     else {p "\ndet is in the right position\n"}
+     
+}'
+
+#################################################################
+##########                                             ##########
+##########           FRANCESCO'S OTHERS MACROS         ##########
+##########                                             ##########
+########## The following macros help the sixth one to  ##########
+########## work.	                               ##########
+##########                                             ##########
+#################################################################
+
+def devstatus(angle, x_val) '{
+ 
+ radius_val      = 250
+ delta           = 0.0005
+ devpos          = spectrometer_analyser_calc(angle, radius_val, x_val)
+ 
+ if(equal(devpos["y"], realpos(x_val, 1), delta) == 1 && equal(devpos["z"], realpos(x_val, 2), delta) == 1 && equal(devpos["chi"], realpos(x_val, 3), delta) == 1 && equal(devpos["theta"], realpos(x_val, 4), delta) == 1)
+ {return("right")}
+ else {return("wrong")}
+ 
+ }'
+ 
+ def detstatus(angle) '{
+ 
+ radius_val      = 250
+ delta           = 0.0005
+ detpos          = spectrometer_detector_calc(angle, radius_val)
+ 
+ if(equal(detpos["y"], A[dety], delta) == 1 && equal(detpos["z"], A[detz], delta) == 1 && equal(detpos["theta"], A[dett], delta) == 1)
+ {return("right")}
+ else {return("wrong")}
+
+}'
+
+def device(x_val) '{
+
+ if(x_val == -240){return("anm2")}
+ if(x_val == -120){return("anm1")}
+ if(x_val == 0){return("an0")}
+ if(x_val == 120){return("anp1")}
+ if(x_val == 240){return("anp2")}
+ 
+ }'
+ 
+def realpos(x_val, mot) '{
+
+ if(x_val == -240 && mot == 1){return(A[anm2y])}
+ if(x_val == -240 && mot == 2){return(A[anm2z])}
+ if(x_val == -240 && mot == 3){return(A[anm2c])}
+ if(x_val == -240 && mot == 4){return(A[anm2t])}
+ 
+ if(x_val == -120 && mot == 1){return(A[anm1y])}
+ if(x_val == -120 && mot == 2){return(A[anm1z])}
+ if(x_val == -120 && mot == 3){return(A[anm1c])}
+ if(x_val == -120 && mot == 4){return(A[anm1t])}
+ 
+ if(x_val == 0 && mot == 1){return(A[an0y])}
+ if(x_val == 0 && mot == 2){return(A[an0z])}
+ if(x_val == 0 && mot == 3){return(A[an0c])}
+ if(x_val == 0 && mot == 4){return(A[an0t])}
+ 
+ if(x_val == 120 && mot == 1){return(A[anp1y])}
+ if(x_val == 120 && mot == 2){return(A[anp1z])}
+ if(x_val == 120 && mot == 3){return(A[anp1c])}
+ if(x_val == 120 && mot == 4){return(A[anp1t])}
+ 
+ if(x_val == 240 && mot == 1){return(A[anp2y])}
+ if(x_val == 240 && mot == 2){return(A[anp2z])}
+ if(x_val == 240 && mot == 3){return(A[anp2c])}
+ if(x_val == 240 && mot == 4){return(A[anp2t])}
+ 
+}'
+ 
+ def wrongpos(angle, x_val) '{
+ 
+ dev = device(x_val)
+ 
+ printf("\n%s is ", dev)
+ neg
+ printf(" in the right position\n\n")
+ 
+ if(equal(devpos["y"], realpos(x_val, 1), delta) == 1) {
+    printf("\The position of %sy (%g) is ok\n", device(x_val), realpos(x_val, 1))
+ } else {
+    printf("The current position of %sy is ", device(x_val))
+    cprint(sprintf(" %g", realpos(x_val, 1)), 8, 8, 1, 0)
+    printf(". Its right position is %g\n", devpos["y"])
+ }
+ if(equal(devpos["z"], realpos(x_val, 2), delta) == 1)
+  {printf("\The position of %sz (%g) is ok\n", device(x_val), realpos(x_val, 2))
+ } else {
+    printf("The current position of %sz is ", device(x_val))
+    cprint(sprintf(" %g", realpos(x_val, 2)), 8, 8, 1, 0)
+    printf(". Its right position is %g\n", devpos["z"])
+ }
+ if(equal(devpos["chi"], realpos(x_val, 3), delta) == 1)
+  {printf("\The position of %sc (%g) is ok\n", device(x_val), realpos(x_val, 3))
+ } else {
+    printf("The current position of %sc is ", device(x_val))
+    cprint(sprintf(" %g", realpos(x_val, 3)), 8, 8, 1, 0)
+    printf(". Its right position is %g\n", devpos["chi"])
+ }
+ if(equal(devpos["theta"], realpos(x_val, 4), delta) == 1)
+  {printf("\The position of %st (%g) is ok\n", device(x_val), realpos(x_val, 4))
+ } else {
+    printf("The current position of %st is ", device(x_val))
+    cprint(sprintf(" %g", realpos(x_val, 4)), 8, 8, 1, 0)
+    printf(". Its right position is %g\n", devpos["theta"])
+ }
+ 
+ }'
+ 
+ def detwrongpos(angle) '{
+
+ printf("\ndet is ")
+ neg
+ printf(" in the right position\n\n")
+ 
+ if(equal(detpos["y"], A[dety], delta) == 1) {
+   printf("\The position of dety (%g) is ok\n", A[dety])
+ } else {
+    printf("The current position of dety is ")
+    cprint(sprintf(" %g", A[dety]), 8, 8, 1, 0)
+    printf(". Its right position is %g\n", detpos["y"])
+ }
+ if (equal(detpos["z"], A[detz], delta) == 1) {
+   printf("\The position of detz (%g) is ok\n", A[detz])
+ } else {
+    printf("The current position of detz is ")
+    cprint(sprintf(" %g", A[detz]), 8, 8, 1, 0)
+    printf(". Its right position is %g\n", detpos["z"])
+ }
+ if(equal(detpos["theta"], A[dett], delta) == 1)
+  {printf("\The position of dett (%g) is ok\n", A[dett])}
+  else {
+    printf("The current position of dett is ")
+    cprint(sprintf(" %g", A[dett]), 8, 8, 1, 0)
+    printf(". Its right position is %g\n", detpos["theta"])
+ }
+ 
+ }'
+ 
+ def neg '{
+ 
+ cprint("not", 8, 8, 1, 0)
+ 
+ }'
